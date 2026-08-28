@@ -1,0 +1,13 @@
+from typing import Any
+
+from jinrong.domain.state import DialogueState
+from jinrong.task.action.base import Action, ActionResult
+
+
+class ActionListener(Action):
+    name = 'action_listen'
+
+    async def run(self,
+                  state: DialogueState,
+                  action_kwargs : dict[str,Any]) -> ActionResult:
+        return ActionResult()

@@ -1,0 +1,15 @@
+from jinrong.task.action.base import Action
+
+
+class ActionRegistry:
+    def __init__(self):
+        self._actions: dict[str, Action] = {}
+
+    def register(self, action: Action):
+        self._actions[action.name] = action
+
+    def get(self,name:str) -> Action:
+
+        if name not in self._actions:
+            raise KeyError(name)
+        return self._actions[name]

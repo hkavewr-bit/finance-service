@@ -1,0 +1,25 @@
+# Python 生成物
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# 虚拟环境与工具缓存
+.venv/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+
+# 本地配置与日志（.env 含本地/远端真实凭据，禁止打入镜像）
+.env
+logs/
+*.log
+
+# 非运行时内容
+tests/
+README.md
+Makefile
+.git/
+seeds/raw/
+docker/docker-compose.yaml

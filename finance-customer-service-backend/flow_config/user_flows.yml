@@ -1,0 +1,217 @@
+slots:
+  account_no:
+    type: text
+    label: 账户号
+    description: 用户的银行账户号
+  card_no:
+    type: text
+    label: 银行卡号
+    description: 用户的银行卡号
+  loss_reason:
+    type: text
+    label: 挂失原因
+    description: 银行卡挂失的原因
+  identity:
+    type: text
+    label: 证件号后四位
+    description: 用于身份核验的证件号后四位
+  loan_product:
+    type: text
+    label: 贷款产品
+    description: 贷款产品编码，如 LOAN_CONSUMER_STD
+  apply_amount:
+    type: text
+    label: 申请金额
+    description: 贷款申请金额（元）
+  apply_term_months:
+    type: text
+    label: 申请期限
+    description: 贷款申请期限（月）
+  loan_purpose:
+    type: text
+    label: 贷款用途
+    description: 贷款用途，如消费、装修
+  ticket_title:
+    type: text
+    label: 投诉标题
+    description: 投诉事项标题
+  ticket_content:
+    type: text
+    label: 投诉内容
+    description: 投诉具体内容
+  result_message:
+    type: text
+    label: 处理结果
+    description: 业务流程的处理结果消息
+
+flows:
+  account_balance_query:
+    name: 账户余额查询
+    description: 帮用户查询银行账户的余额和状态。
+    steps:
+      - id: start
+        type: start
+        next: ask_account_no
+      - id: ask_account_no
+        type: collect
+        slot_name: account_no
+        response:
+          text: "请提供要查询的账户号（也可以点击右侧的账户卡片）。"
+        next: lookup
+      - id: lookup
+        type: action
+        action: action_lookup_account_balance
+        next: show
+      - id: show
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.result_message }}"
+        next: end
+      - id: end
+        type: end
+        next: []
+
+  transaction_query:
+    name: 交易流水查询
+    description: 帮用户查询银行账户的交易流水。
+    steps:
+      - id: start
+        type: start
+        next: ask_account_no
+      - id: ask_account_no
+        type: collect
+        slot_name: account_no
+        response:
+          text: "请提供要查询流水的账户号（也可以点击右侧的账户卡片）。"
+        next: lookup
+      - id: lookup
+        type: action
+        action: action_lookup_transactions
+        next: show
+      - id: show
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.result_message }}"
+        next: end
+      - id: end
+        type: end
+        next: []
+
+  loan_application:
+    name: 贷款申请
+    description: 帮用户申请贷款，收集产品、金额、期限、用途并提交申请。
+    steps:
+      - id: start
+        type: start
+        next: ask_product
+      - id: ask_product
+        type: collect
+        slot_name: loan_product
+        response:
+          text: "请选择贷款产品（可点击右侧贷款产品卡片，或输入产品编码，如 LOAN_CONSUMER_STD）。"
+        next: ask_amount
+      - id: ask_amount
+        type: collect
+        slot_name: apply_amount
+        response:
+          text: "请输入申请金额（元）。"
+        next: ask_term
+      - id: ask_term
+        type: collect
+        slot_name: apply_term_months
+        response:
+          text: "请输入申请期限（月）。"
+        next: ask_purpose
+      - id: ask_purpose
+        type: collect
+        slot_name: loan_purpose
+        response:
+          text: "请输入贷款用途（如消费、装修）。"
+        next: submit
+      - id: submit
+        type: action
+        action: action_submit_loan_application
+        next: show
+      - id: show
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.result_message }}"
+        next: end
+      - id: end
+        type: end
+        next: []
+
+  card_loss_report:
+    name: 银行卡挂失
+    description: 帮用户办理银行卡挂失，收集卡号、原因、证件号后四位并生成挂失工单。
+    steps:
+      - id: start
+        type: start
+        next: ask_card_no
+      - id: ask_card_no
+        type: collect
+        slot_name: card_no
+        response:
+          text: "请提供需要挂失的银行卡号。"
+        next: ask_reason
+      - id: ask_reason
+        type: collect
+        slot_name: loss_reason
+        response:
+          text: "请说明挂失原因（如丢失、被盗、损坏）。"
+        next: ask_identity
+      - id: ask_identity
+        type: collect
+        slot_name: identity
+        response:
+          text: "请提供证件号后四位用于身份核验。"
+        next: submit
+      - id: submit
+        type: action
+        action: action_submit_card_loss
+        next: show
+      - id: show
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.result_message }}"
+        next: end
+      - id: end
+        type: end
+        next: []
+
+  complaint_ticket:
+    name: 投诉工单
+    description: 帮用户提交投诉工单，收集标题和内容。
+    steps:
+      - id: start
+        type: start
+        next: ask_title
+      - id: ask_title
+        type: collect
+        slot_name: ticket_title
+        response:
+          text: "请简要说明投诉事项标题。"
+        next: ask_content
+      - id: ask_content
+        type: collect
+        slot_name: ticket_content
+        response:
+          text: "请描述具体投诉内容。"
+        next: submit
+      - id: submit
+        type: action
+        action: action_submit_complaint
+        next: show
+      - id: show
+        type: action
+        action: action_response
+        args:
+          text: "{{ slots.result_message }}"
+        next: end
+      - id: end
+        type: end
+        next: []

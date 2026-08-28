@@ -1,0 +1,79 @@
+# 金融数据中台 finance-data 部署编排
+#
+# 用法（在远端 192.168.100.100 上，本目录 /app/finance-data 下）：
+#   docker compose up -d --build              # 默认 smoke 规模数据（快，几万行）
+#   PROFILE=full docker compose up -d --build # 全量数据（1M 交易/5万客户，较慢）
+#
+# 可覆盖变量（写入同目录 .env 或 export）：
+#   MYSQL_ROOT_PASSWORD  MySQL root 密码（默认 hzk686868，生产务必修改）
+#   MYSQL_PORT           宿主机 MySQL 端口映射（默认 3306）
+#   APP_PORT             宿主机数据中台端口映射（默认 8000）
+#   PROFILE              数据规模 smoke|full（默认 smoke）
+#
+# 注意：若宿主机 3306 已存在原生 MySQL，请把 MYSQL_PORT 改成其它端口（如 3307）。
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: finance-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-hzk686868}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # 一次性容器：等待 MySQL 就绪后导入 schema + 生成默认数据，完成后退出
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: finance-data:latest
+    container_name: finance-db-init
+    restart: "no"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-hzk686868}
+      DB_NAME: finance
+      PROFILE: ${PROFILE:-smoke}
+    entrypoint: ["sh", "/app/docker/init-db.sh"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # 数据中台 API 服务
+  finance-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: finance-data:latest
+    container_name: finance-data
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-hzk686868}
+      DB_NAME: finance
+      APP_PORT: "8000"
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+volumes:
+  mysql-data:
