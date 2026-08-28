@@ -544,6 +544,7 @@ onMounted(() => {
 html, body, #app {
   margin: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -616,7 +617,9 @@ body {
   flex: 1;
   display: grid;
   grid-template-columns: 220px 1fr 320px;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 /* controls */
@@ -624,6 +627,7 @@ body {
   padding: 18px 16px;
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column; gap: 10px;
+  min-height: 0;
   overflow-y: auto;
 }
 .field-label { font-size: 12px; color: var(--text-dim); }
@@ -642,7 +646,7 @@ body {
 .error-text { font-size: 12px; color: #f87171; line-height: 1.5; }
 
 /* chat */
-.chat { display: flex; flex-direction: column; min-width: 0; }
+.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .chat-scroll { flex: 1; overflow-y: auto; padding: 22px 26px; }
 .empty-state { text-align: center; padding: 60px 20px; }
 .empty-avatar { font-size: 44px; margin-bottom: 12px; }
@@ -731,6 +735,7 @@ body {
   border-left: 1px solid var(--border);
   display: flex; flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
 .tab {

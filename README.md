@@ -94,6 +94,39 @@ python -m generate.main --profile full  # 生成 9 层数据
 python -m uvicorn app.main:app --port 8000
 ```
 
+### 1.1 数据中台 Docker 部署（远端可选）
+
+`finance-data` 提供 Docker 部署（含 MySQL 依赖 + 默认数据导入），适合部署到 `192.168.100.100` 等远端服务器：
+
+```bash
+cd finance-data
+docker compose up -d --build               # 默认 smoke 规模数据（快）
+PROFILE=full docker compose up -d --build  # 全量数据（1M 交易/5万客户，较慢）
+docker compose logs -f db-init             # 观察初始化进度
+curl http://127.0.0.1:8000/health          # 验证
+```
+
+编排（3 个服务）：
+
+| 服务 | 作用 |
+|---|---|
+| `mysql` | MySQL 8.0，持久化卷 + 健康检查 |
+| `db-init` | 一次性容器：建库导 DDL + 生成 9 层默认数据，完成后退出 |
+| `finance-api` | 数据中台 API，映射宿主机 `8000` |
+
+可覆盖变量（`export` 或写入 `finance-data/.env`）：
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `MYSQL_ROOT_PASSWORD` | `hzk686868` | MySQL root 密码（生产务必修改） |
+| `MYSQL_PORT` | `3306` | 宿主机 MySQL 端口映射（冲突时改 `3307`） |
+| `APP_PORT` | `8000` | 宿主机数据中台端口映射 |
+| `PROFILE` | `smoke` | 数据规模 `smoke`/`full` |
+
+> 需要 Docker Compose v2（依赖 `service_completed_successfully`）。首次构建会拉取 `mysql:8.0` 与 `ghcr.io/astral-sh/uv` 镜像及 PyPI 依赖。重建数据执行 `docker compose down -v` 后重新 `up`（`init-db.sh` 检测到已有表会跳过，避免重复初始化）。
+
+> 若数据中台部署在远端，需同步把客服后端 `.env` 的 `FINANCE_API_BASE_URL` 和前端 `vite.config.js` 的 `/finance` proxy 指向远端地址。
+
 ### 2. 客服后端
 
 ```bash
